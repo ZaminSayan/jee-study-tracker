@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEE Prayas Study Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3);
+        }
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        /* FIXED PROGRESS RING TRANSITIONS AND INLINE SCALING */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: center;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/20">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.746 18.477 18.168 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">JEE Prayas Study Tracker</h1>
+                    <p class="text-xs text-gray-400">Target JEE Advanced • Personalized Roadmap</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="exportData()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export Backup
+                </button>
+                <button onclick="resetToDefault()" class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/40 text-red-400 border border-red-900/50 rounded-lg text-xs font-medium transition">
+                    Reset Tracker
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 mt-8">
+        <nav class="flex flex-wrap gap-2 mb-8 bg-gray-900/60 p-1.5 rounded-xl border border-gray-800/60" id="tabs-container">
+            <button onclick="switchTab('physics')" id="tab-physics" class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 flex items-center justify-center gap-2">⚡ Physics</button>
+            <button onclick="switchTab('pchem')" id="tab-pchem" class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 flex items-center justify-center gap-2">⚗️ Physical Chem</button>
+            <button onclick="switchTab('ochem')" id="tab-ochem" class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 flex items-center justify-center gap-2">🌿 Organic Chem</button>
+            <button onclick="switchTab('ichem')" id="tab-ichem" class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 flex items-center justify-center gap-2">🔬 Inorganic Chem</button>
+            <button onclick="switchTab('maths')" id="tab-maths" class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 flex items-center justify-center gap-2">📐 Maths</button>
+            <button onclick="switchTab('tests')" id="tab-tests" class="flex-1 min-w-[120px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 text-gray-400 hover:text-gray-200 hover:bg-gray-800/50 flex items-center justify-center gap-2">📊 Tests & Analysis</button>
+        </nav>
+
+        <div id="subject-view" class="hidden space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6 justify-center">
+                    <div class="relative w-32 h-32 flex items-center justify-center">
+                        <svg viewBox="0 0 120 120" class="w-full h-full">
+                            <circle cx="60" cy="60" r="50" stroke="rgba(255,255,255,0.05)" stroke-width="10" fill="transparent"/>
+                            <circle id="subject-progress-ring" cx="60" cy="60" r="50" stroke="#ef4444" stroke-width="10" fill="transparent" class="progress-ring__circle" stroke-linecap="round"/>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="subject-percentage" class="text-2xl font-bold">0%</span>
+                            <span class="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Complete</span>
+                        </div>
+                    </div>
+                    <div class="text-center sm:text-left">
+                        <h2 id="subject-title" class="text-xl font-bold text-white mb-1">Physics Tracker</h2>
+                        <p class="text-xs text-gray-400">Aggregated real-time metrics across all chapters</p>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+                        <span class="text-xs font-semibold tracking-wider uppercase text-gray-400 block mb-2">Lectures Done</span>
+                        <span id="stat-lectures" class="text-3xl font-bold text-blue-400">0/0</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+                        <span class="text-xs font-semibold tracking-wider uppercase text-gray-400 block mb-2">DPPs Handled</span>
+                        <span id="stat-dpps" class="text-3xl font-bold text-emerald-400">0/0</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+                        <span class="text-xs font-semibold tracking-wider uppercase text-gray-400 block mb-2">Chapters Clear</span>
+                        <span id="stat-chapters" class="text-3xl font-bold text-purple-400">0</span>
+                    </div>
+                    <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
+                        <span class="text-xs font-semibold tracking-wider uppercase text-gray-400 block mb-2">PYQs Cracked</span>
+                        <span id="stat-pyqs" class="text-3xl font-bold text-amber-400">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                <form id="add-chapter-form" onsubmit="addChapter(event)" class="glass-card rounded-2xl p-5 space-y-4 lg:col-span-1 border border-gray-800">
+                    <h3 class="text-sm font-bold text-white tracking-wide border-b border-gray-800 pb-2">Add New Chapter</h3>
+                    <div>
+                        <label class="block text-xs text-gray-400 font-medium mb-1">Chapter Title</label>
+                        <input type="text" id="input-ch-name" required placeholder="e.g. Kinematics" class="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 font-medium mb-1">Total Lecs</label>
+                            <input type="number" id="input-ch-lecs" min="1" required placeholder="10" class="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 font-medium mb-1">Total DPPs</label>
+                            <input type="number" id="input-ch-dpps" min="0" required placeholder="8" class="w-full bg-gray-900 border border-gray-700/80 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-xs transition shadow-md shadow-blue-600/10">
+                        Append Chapter Line
+                    </button>
+                </form>
+
+                <div class="lg:col-span-3 glass-card rounded-2xl overflow-hidden border border-gray-800">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[700px]">
+                            <thead>
+                                <tr class="bg-gray-900/80 border-b border-gray-800 text-[11px] font-bold tracking-wider text-gray-400 uppercase">
+                                    <th class="py-3.5 px-4 w-[5%] text-center">#</th>
+                                    <th class="py-3.5 px-4 w-[25%]">Chapter Info</th>
+                                    <th class="py-3.5 px-4 w-[8%] text-center">Status</th>
+                                    <th class="py-3.5 px-4 w-[20%]">Lectures Module</th>
+                                    <th class="py-3.5 px-4 w-[20%]">DPPs Module</th>
+                                    <th class="py-3.5 px-4 w-[12%]">PYQs Done</th>
+                                    <th class="py-3.5 px-4 w-[10%] text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chapters-tbody" class="divide-y divide-gray-800/60 bg-gray-950/20"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tests-view" class="hidden space-y-12">
+            <section class="space-y-6">
+                <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">📝 Main Mock Examinations</h2>
+                        <p class="text-xs text-gray-400">High fidelity data logger optimized for full length test runs</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+                    <div class="xl:col-span-1 space-y-4">
+                        <form onsubmit="addTestLog(event)" class="glass-card rounded-2xl p-4 space-y-3">
+                            <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wide">Log New Assessment</h3>
+                            <input type="text" id="test-name" required placeholder="Test/Institute Title" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                            <select id="test-subject" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                                <option value="" disabled selected>Target Domain</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Physical Chem">Physical Chem</option>
+                                <option value="Organic Chem">Organic Chem</option>
+                                <option value="Inorganic Chem">Inorganic Chem</option>
+                                <option value="Maths">Maths</option>
+                                <option value="Full Syllabus">Full Syllabus</option>
+                            </select>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" id="test-score" min="0" required placeholder="Score" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                                <input type="number" id="test-total" min="1" required placeholder="Max" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" id="test-time" placeholder="Mins/Hrs" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                                <input type="date" id="test-date" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                            </div>
+                            <button class="w-full py-1.5 bg-blue-600 hover:bg-blue-500 font-semibold rounded-lg text-xs text-white transition">Commit Test Entry</button>
+                        </form>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="glass-card rounded-xl p-3"><span class="text-[10px] text-gray-400 block uppercase font-medium">Logged</span><span id="m-stat-total" class="text-xl font-bold text-white">0</span></div>
+                            <div class="glass-card rounded-xl p-3"><span class="text-[10px] text-gray-400 block uppercase font-medium">Avg %</span><span id="m-stat-avg" class="text-xl font-bold text-blue-400">0%</span></div>
+                            <div class="glass-card rounded-xl p-3"><span class="text-[10px] text-gray-400 block uppercase font-medium">Peak Score</span><span id="m-stat-best" class="text-xl font-bold text-emerald-400">0%</span></div>
+                            <div class="glass-card rounded-xl p-3"><span class="text-[10px] text-gray-400 block uppercase font-medium">Floor Score</span><span id="m-stat-worst" class="text-xl font-bold text-rose-400">0%</span></div>
+                        </div>
+                    </div>
+
+                    <div class="xl:col-span-3 space-y-4">
+                        <div class="glass-card rounded-2xl p-4 h-[240px] relative">
+                            <canvas id="mainTestChart"></canvas>
+                        </div>
+                        <div class="glass-card rounded-2xl overflow-hidden border border-gray-800 text-xs">
+                            <div class="overflow-x-auto max-h-[220px]">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gray-900/90 sticky top-0 text-[10px] text-gray-400 tracking-wider uppercase font-bold border-b border-gray-800">
+                                        <tr>
+                                            <th class="p-2.5">Date</th>
+                                            <th class="p-2.5">Test Identification</th>
+                                            <th class="p-2.5">Domain</th>
+                                            <th class="p-2.5 text-center">Score Ratio</th>
+                                            <th class="p-2.5 text-center">Yield</th>
+                                            <th class="p-2.5 text-center">Duration</th>
+                                            <th class="p-2.5 text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="main-tests-tbody" class="divide-y divide-gray-800/50"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="space-y-6">
+                <div class="border-b border-gray-800 pb-3">
+                    <h2 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">📋 Daily Practice Problem (DPP) Execution Registry</h2>
+                    <p class="text-xs text-gray-400">Granular verification log analyzing execution ratios down to target sheets</p>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+                    <div class="xl:col-span-1 space-y-4">
+                        <form onsubmit="addDppLog(event)" class="glass-card rounded-2xl p-4 space-y-3">
+                            <h3 class="text-xs font-bold text-gray-300 uppercase tracking-wide">Register Completed DPP</h3>
+                            <select id="dpp-subject" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+                                <option value="" disabled selected>Target Subject</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Physical Chem">Physical Chem</option>
+                                <option value="Organic Chem">Organic Chem</option>
+                                <option value="Inorganic Chem">Inorganic Chem</option>
+                                <option value="Maths">Maths</option>
+                            </select>
+                            <input type="text" id="dpp-chapter" required placeholder="Chapter Reference Name" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+                            <input type="number" id="dpp-number" min="1" required placeholder="DPP Identifier / Sheet No." class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="number" id="dpp-score" min="0" required placeholder="Score Obtained" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+                                <input type="number" id="dpp-total" min="1" required placeholder="Total Marks" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <input type="date" id="dpp-date" required class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500">
+                            <button class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-lg text-xs text-white transition">Commit DPP Metrics</button>
+                        </form>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="glass-card rounded-xl p-3"><span class="text-[10px] text-gray-400 block uppercase font-medium">Logged</span><span id="d-stat-total" class="text-xl font-bold text-white">0</span></div>
+                            <div class="glass-card rounded-xl p-3"><span class="text-[10px] text-gray-400 block uppercase font-medium">Avg %</span><span id="d-stat-avg" class="text-xl font-bold text-emerald-400">0%</span></div>
+                            <div class="glass-card rounded-xl p-3"><span class="text-[10px] text-gray-400 block uppercase font-medium">Peak Score</span><span id="d-stat-best" class="text-xl font-bold text-blue-400">0%</span></div>
+                            <div class="glass-card rounded-xl p-3"><span class="text-[10px] text-gray-400 block uppercase font-medium">Floor Score</span><span id="d-stat-worst" class="text-xl font-bold text-rose-400">0%</span></div>
+                        </div>
+                    </div>
+
+                    <div class="xl:col-span-3 space-y-4">
+                        <div class="glass-card rounded-2xl p-4 h-[240px] relative">
+                            <canvas id="dppTestChart"></canvas>
+                        </div>
+                        <div class="glass-card rounded-2xl overflow-hidden border border-gray-800 text-xs">
+                            <div class="overflow-x-auto max-h-[220px]">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-gray-900/90 sticky top-0 text-[10px] text-gray-400 tracking-wider uppercase font-bold border-b border-gray-800">
+                                        <tr>
+                                            <th class="p-2.5">Date</th>
+                                            <th class="p-2.5">Subject Domain</th>
+                                            <th class="p-2.5">Chapter Target</th>
+                                            <th class="p-2.5 text-center">DPP Indx</th>
+                                            <th class="p-2.5 text-center">Score Ratio</th>
+                                            <th class="p-2.5 text-center">Efficiency Score</th>
+                                            <th class="p-2.5 text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dpp-tests-tbody" class="divide-y divide-gray-800/50"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const INITIAL_STATE = {
+            physics: [
+                { id: "p1", name: "Mathematical Tools", lecsDone: 7, lecsTotal: 7, dppsDone: 3, dppsTotal: 3, pyqs: 25 },
+                { id: "p2", name: "Error in Measurements", lecsDone: 4, lecsTotal: 4, dppsDone: 2, dppsTotal: 2, pyqs: 12 },
+                { id: "p3", name: "Motion in a Straight Line", lecsDone: 5, lecsTotal: 7, dppsDone: 3, dppsTotal: 6, pyqs: 40 },
+                { id: "p4", name: "Motion in a Plane", lecsDone: 0, lecsTotal: 4, dppsDone: 0, dppsTotal: 2, pyqs: 0 },
+                { id: "p5", name: "Relative Motion", lecsDone: 0, lecsTotal: 4, dppsDone: 0, dppsTotal: 3, pyqs: 0 }
+            ],
+            pchem: [
+                { id: "pc1", name: "Some Basic Concepts of Chemistry", lecsDone: 13, lecsTotal: 13, dppsDone: 9, dppsTotal: 9, pyqs: 50 },
+                { id: "pc2", name: "Redox Reaction", lecsDone: 6, lecsTotal: 6, dppsDone: 4, dppsTotal: 5, pyqs: 18 },
+                { id: "pc3", name: "Solutions", lecsDone: 2, lecsTotal: 4, dppsDone: 1, dppsTotal: 3, pyqs: 5 }
+            ],
+            ochem: [],
+            ichem: [],
+            maths: [
+                { id: "m1", name: "Basic Mathematics", lecsDone: 16, lecsTotal: 16, dppsDone: 8, dppsTotal: 8, pyqs: 0 },
+                { id: "m2", name: "Quadratic Equations", lecsDone: 7, lecsTotal: 7, dppsDone: 3, dppsTotal: 3, pyqs: 35 }
+            ],
+            mainTests: [],
+            dppLogs: []
+        };
+
+        let state = {};
+        let currentTab = 'physics';
+        let mainChartInstance = null;
+        let dppChartInstance = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            switchTab('physics');
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('test-date').value = today;
+            document.getElementById('dpp-date').value = today;
+        });
+
+        function loadState() {
+            const raw = localStorage.getItem('jee_prayas_state');
+            if (raw) {
+                try {
+                    state = JSON.parse(raw);
+                    if(!state.mainTests) state.mainTests = [];
+                    if(!state.dppLogs) state.dppLogs = [];
+                } catch(e) {
+                    state = JSON.parse(JSON.stringify(INITIAL_STATE));
+                }
+            } else {
+                state = JSON.parse(JSON.stringify(INITIAL_STATE));
+                saveState();
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('jee_prayas_state', JSON.stringify(state));
+        }
+
+        function resetToDefault() {
+            if(confirm("Are you sure you want to clear your data?")) {
+                state = JSON.parse(JSON.stringify(INITIAL_STATE));
+                saveState();
+                location.reload();
+            }
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `JEE_Prayas_Backup_${new Date().toISOString().split('T')[0]}.json`);
+            dlAnchorElem.click();
+        }
+
+        function getColorHex(percentage) {
+            if (percentage >= 100) return '#22c55e';
+            if (percentage >= 75) return '#86efac';
+            if (percentage >= 50) return '#eab308';
+            if (percentage >= 25) return '#f97316';
+            return '#ef4444';
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('#tabs-container button').forEach(btn => {
+                btn.classList.remove('tab-active', 'bg-blue-600', 'text-white');
+                btn.classList.add('text-gray-400');
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('tab-active');
+            document.getElementById(`tab-${tabId}`).classList.remove('text-gray-400');
+
+            if (tabId === 'tests') {
+                document.getElementById('subject-view').classList.add('hidden');
+                document.getElementById('tests-view').classList.remove('hidden');
+                renderAnalyticsView();
+            } else {
+                document.getElementById('tests-view').classList.add('hidden');
+                document.getElementById('subject-view').classList.remove('hidden');
+                renderSubjectView();
+            }
+        }
+
+        function renderSubjectView() {
+            const chapters = state[currentTab] || [];
+            const titles = {
+                physics: "⚡ Physics Core Workspace",
+                pchem: "⚗️ Physical Chemistry Logs",
+                ochem: "🌿 Organic Chemistry Suite",
+                ichem: "🔬 Inorganic Chemistry Panel",
+                maths: "📐 Advanced Mathematics Engine"
+            };
+
+            document.getElementById('subject-title').innerText = titles[currentTab];
+
+            let totalLecsDone = 0, totalLecsExpected = 0;
+            let totalDppsDone = 0, totalDppsExpected = 0;
+            let chaptersDoneCount = 0;
+            let aggregatedPyqs = 0;
+
+            chapters.forEach(ch => {
+                totalLecsDone += parseInt(ch.lecsDone || 0);
+                totalLecsExpected += parseInt(ch.lecsTotal || 0);
+                totalDppsDone += parseInt(ch.dppsDone || 0);
+                totalDppsExpected += parseInt(ch.dppsTotal || 0);
+                aggregatedPyqs += parseInt(ch.pyqs || 0);
+
+                if (ch.lecsTotal > 0 && ch.dppsTotal > 0 && ch.lecsDone >= ch.lecsTotal && ch.dppsDone >= ch.dppsTotal) {
+                    chaptersDoneCount++;
+                }
+            });
+
+            let overallPct = 0;
+            const totalWorkExpected = totalLecsExpected + totalDppsExpected;
+            if (totalWorkExpected > 0) {
+                overallPct = Math.round(((totalLecsDone + totalDppsDone) / totalWorkExpected) * 100);
+            }
+
+            document.getElementById('subject-percentage').innerText = `${overallPct}%`;
+            document.getElementById('stat-lectures').innerText = `${totalLecsDone}/${totalLecsExpected}`;
+            document.getElementById('stat-dpps').innerText = `${totalDppsDone}/${totalDppsExpected}`;
+            document.getElementById('stat-chapters').innerText = `${chaptersDoneCount}`;
+            document.getElementById('stat-pyqs').innerText = `${aggregatedPyqs}`;
+
+            // FIXED BIG RING MATH & PROPERTIES
+            const macroRing = document.getElementById('subject-progress-ring');
+            const radius = 50; 
+            const circumference = radius * 2 * Math.PI; // 314.159
+            const offset = circumference - (overallPct / 100) * circumference;
+            
+            macroRing.style.strokeDasharray = circumference;
+            macroRing.style.strokeDashoffset = offset;
+            macroRing.style.stroke = getColorHex(overallPct);
+
+            const tbody = document.getElementById('chapters-tbody');
+            tbody.innerHTML = '';
+
+            if(chapters.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-12 text-center text-gray-500 font-medium text-xs">No trackable module indices registered. Add a chapter layout on the left.</td></tr>`;
+                return;
+            }
+
+            chapters.forEach((ch, idx) => {
+                const chLecPct = ch.lecsTotal > 0 ? (ch.lecsDone / ch.lecsTotal) * 100 : 0;
+                const chDppPct = ch.dppsTotal > 0 ? (ch.dppsDone / ch.dppsTotal) * 100 : 0;
+                const chTotalPct = (ch.lecsTotal + ch.dppsTotal) > 0 ? Math.round(((ch.lecsDone + ch.dppsDone) / (ch.lecsTotal + ch.dppsTotal)) * 100) : 0;
+
+                const isDone = (ch.lecsDone >= ch.lecsTotal && ch.dppsDone >= ch.dppsTotal);
+                
+                // FIXED SMALL INLINE CELL PROGRESS RING GEOMETRY
+                const subRadius = 18;
+                const subCircumference = subRadius * 2 * Math.PI; // 113.09
+                const subOffset = subCircumference - (chTotalPct / 100) * subCircumference;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-900/30 transition duration-150 group";
+                tr.innerHTML = `
+                    <td class="py-4 px-4 font-mono text-xs text-gray-500 text-center">${idx + 1}</td>
+                    <td class="py-4 px-4">
+                        <div class="text-sm font-semibold text-white tracking-wide">${ch.name}</div>
+                    </td>
+                    <td class="py-4 px-4 text-center">
+                        <div class="inline-flex items-center justify-center relative w-11 h-11">
+                            <svg viewBox="0 0 44 44" class="w-full h-full">
+                                <circle cx="22" cy="22" r="18" stroke="rgba(255,255,255,0.03)" stroke-width="4" fill="transparent"/>
+                                <circle cx="22" cy="22" r="18" stroke="${getColorHex(chTotalPct)}" stroke-width="4" fill="transparent" class="progress-ring__circle" stroke-linecap="round" stroke-dasharray="${subCircumference}" stroke-dashoffset="${subOffset}"/>
+                            </svg>
+                            <span class="absolute text-[9px] font-bold">${chTotalPct}%</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 space-y-1">
+                        <div class="flex items-center gap-1.5 text-xs text-gray-300">
+                            <input type="number" value="${ch.lecsDone}" min="0" max="${ch.lecsTotal}" onchange="updateRowField('${ch.id}', 'lecsDone', this.value)" class="w-11 bg-gray-900/80 text-center font-bold text-blue-400 border border-gray-800 rounded px-1 py-0.5 focus:outline-none focus:border-blue-500">
+                            <span class="text-gray-600 font-medium">/</span>
+                            <input type="number" value="${ch.lecsTotal}" min="1" onchange="updateRowField('${ch.id}', 'lecsTotal', this.value)" class="w-11 bg-gray-900/40 text-center font-medium text-gray-400 border border-transparent hover:border-gray-800 rounded px-1 py-0.5 focus:outline-none focus:border-blue-500">
+                            <span class="text-[10px] text-gray-500 ml-1">lecs</span>
+                        </div>
+                        <div class="w-24 bg-gray-900 h-1 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full transition-all duration-300" style="width: ${Math.min(chLecPct, 100)}%"></div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 space-y-1">
+                        <div class="flex items-center gap-1.5 text-xs text-gray-300">
+                            <input type="number" value="${ch.dppsDone}" min="0" max="${ch.dppsTotal}" onchange="updateRowField('${ch.id}', 'dppsDone', this.value)" class="w-11 bg-gray-900/80 text-center font-bold text-emerald-400 border border-gray-800 rounded px-1 py-0.5 focus:outline-none focus:border-emerald-500">
+                            <span class="text-gray-600 font-medium">/</span>
+                            <input type="number" value="${ch.dppsTotal}" min="0" onchange="updateRowField('${ch.id}', 'dppsTotal', this.value)" class="w-11 bg-gray-900/40 text-center font-medium text-gray-400 border border-transparent hover:border-gray-800 rounded px-1 py-0.5 focus:outline-none focus:border-emerald-500">
+                            <span class="text-[10px] text-gray-500 ml-1">dpps</span>
+                        </div>
+                        <div class="w-24 bg-gray-900 h-1 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-full transition-all duration-300" style="width: ${Math.min(chDppPct, 100)}%"></div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <input type="number" value="${ch.pyqs}" min="0" onchange="updateRowField('${ch.id}', 'pyqs', this.value)" class="w-16 bg-gray-900 text-center border border-gray-800 font-semibold text-amber-400 rounded py-0.5 focus:outline-none focus:border-amber-500 text-xs">
+                    </td>
+                    <td class="py-4 px-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            ${isDone ? `<span class="bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider">Done</span>` : ''}
+                            <button onclick="deleteChapter('${ch.id}')" class="text-gray-600 hover:text-rose-400 p-1 rounded hover:bg-rose-950/20 transition opacity-0 group-hover:opacity-100 focus:opacity-100">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addChapter(e) {
+            e.preventDefault();
+            const name = document.getElementById('input-ch-name').value.trim();
+            const lecsTotal = parseInt(document.getElementById('input-ch-lecs').value) || 0;
+            const dppsTotal = parseInt(document.getElementById('input-ch-dpps').value) || 0;
+
+            state[currentTab].push({
+                id: 'ch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                name, lecsDone: 0, lecsTotal, dppsDone: 0, dppsTotal, pyqs: 0
+            });
+            saveState();
+            renderSubjectView();
+            document.getElementById('add-chapter-form').reset();
+        }
+
+        function updateRowField(chId, field, value) {
+            const index = state[currentTab].findIndex(c => c.id === chId);
+            if (index !== -1) {
+                let numVal = parseInt(value) || 0;
+                if (numVal < 0) numVal = 0;
+                
+                if ((field === 'lecsDone') && numVal > state[currentTab][index].lecsTotal) numVal = state[currentTab][index].lecsTotal;
+                if ((field === 'dppsDone') && numVal > state[currentTab][index].dppsTotal) numVal = state[currentTab][index].dppsTotal;
+
+                state[currentTab][index][field] = numVal;
+                saveState();
+                renderSubjectView();
+            }
+        }
+
+        function deleteChapter(chId) {
+            if(confirm("Confirm deletion of this chapter element row line?")) {
+                state[currentTab] = state[currentTab].filter(c => c.id !== chId);
+                saveState();
+                renderSubjectView();
+            }
+        }
+
+        function renderAnalyticsView() {
+            renderTestSection();
+            renderDppSection();
+        }
+
+        function getScoreBadgeClass(pct) {
+            if (pct >= 80) return 'bg-emerald-950/80 border border-emerald-800 text-emerald-400 font-bold';
+            if (pct >= 50) return 'bg-amber-950/80 border border-amber-800 text-amber-400 font-bold';
+            return 'bg-rose-950/80 border border-rose-800 text-rose-400 font-bold';
+        }
+
+        function renderTestSection() {
+            const tests = state.mainTests || [];
+            const total = tests.length;
+            let avgPct = 0, bestPct = 0, worstPct = 100;
+            
+            if (total > 0) {
+                let sumPct = 0;
+                tests.forEach(t => {
+                    const pct = (t.score / t.total) * 100;
+                    sumPct += pct;
+                    if (pct > bestPct) bestPct = pct;
+                    if (pct < worstPct) worstPct = pct;
+                });
+                avgPct = Math.round(sumPct / total);
+                bestPct = Math.round(bestPct);
+                worstPct = Math.round(worstPct);
+            } else { worstPct = 0; }
+
+            document.getElementById('m-stat-total').innerText = total;
+            document.getElementById('m-stat-avg').innerText = `${avgPct}%`;
+            document.getElementById('m-stat-best').innerText = `${bestPct}%`;
+            document.getElementById('m-stat-worst').innerText = `${worstPct}%`;
+
+            const tbody = document.getElementById('main-tests-tbody');
+            tbody.innerHTML = '';
+            const sortedTests = [...tests].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            sortedTests.forEach(t => {
+                const pct = Math.round((t.score / t.total) * 100);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-900/30 transition";
+                tr.innerHTML = `
+                    <td class="p-2.5 font-mono text-gray-400">${t.date}</td>
+                    <td class="p-2.5 font-semibold text-white">${t.name}</td>
+                    <td class="p-2.5 text-gray-300"><span class="px-2 py-0.5 bg-gray-900 border border-gray-800 rounded text-[10px] font-medium">${t.subject}</span></td>
+                    <td class="p-2.5 text-center font-medium text-gray-300">${t.score} / ${t.total}</td>
+                    <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded text-[10px] ${getScoreBadgeClass(pct)}">${pct}%</span></td>
+                    <td class="p-2.5 text-center text-gray-400 font-medium">${t.time || '-'}</td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="deleteTestLog('${t.id}')" class="text-gray-600 hover:text-rose-400 p-1 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </td>
+                `;
+                tbody.insertBefore(tr, tbody.firstChild);
+            });
+
+            buildLineChart('mainTestChart', mainChartInstance, sortedTests, 'Main Tests Trend', '#3b82f6', (inst) => mainChartInstance = inst);
+        }
+
+        function addTestLog(e) {
+            e.preventDefault();
+            const name = document.getElementById('test-name').value.trim();
+            const subject = document.getElementById('test-subject').value;
+            const score = parseFloat(document.getElementById('test-score').value) || 0;
+            const total = parseFloat(document.getElementById('test-total').value) || 1;
+            const time = document.getElementById('test-time').value.trim();
+            const date = document.getElementById('test-date').value;
+
+            state.mainTests.push({ id: 'test_' + Date.now(), name, subject, score, total, time, date });
+            saveState();
+            renderTestSection();
+            e.target.reset();
+            document.getElementById('test-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        function deleteTestLog(id) {
+            if(confirm("Delete this log?")) {
+                state.mainTests = state.mainTests.filter(t => t.id !== id);
+                saveState();
+                renderTestSection();
+            }
+        }
+
+        function renderDppSection() {
+            const dpps = state.dppLogs || [];
+            const total = dpps.length;
+            let avgPct = 0, bestPct = 0, worstPct = 100;
+            
+            if (total > 0) {
+                let sumPct = 0;
+                dpps.forEach(d => {
+                    const pct = (d.score / d.total) * 100;
+                    sumPct += pct;
+                    if (pct > bestPct) bestPct = pct;
+                    if (pct < worstPct) worstPct = pct;
+                });
+                avgPct = Math.round(sumPct / total);
+                bestPct = Math.round(bestPct);
+                worstPct = Math.round(worstPct);
+            } else { worstPct = 0; }
+
+            document.getElementById('d-stat-total').innerText = total;
+            document.getElementById('d-stat-avg').innerText = `${avgPct}%`;
+            document.getElementById('d-stat-best').innerText = `${bestPct}%`;
+            document.getElementById('d-stat-worst').innerText = `${worstPct}%`;
+
+            const tbody = document.getElementById('dpp-tests-tbody');
+            tbody.innerHTML = '';
+            const sortedDpps = [...dpps].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            sortedDpps.forEach(d => {
+                const pct = Math.round((d.score / d.total) * 100);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-900/30 transition";
+                tr.innerHTML = `
+                    <td class="p-2.5 font-mono text-gray-400">${d.date}</td>
+                    <td class="p-2.5 text-white font-medium">${d.subject}</td>
+                    <td class="p-2.5 font-semibold text-gray-200">${d.chapter}</td>
+                    <td class="p-2.5 text-center font-mono text-gray-400">#${d.dppNum}</td>
+                    <td class="p-2.5 text-center font-medium text-gray-300">${d.score} / ${d.total}</td>
+                    <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded text-[10px] ${getScoreBadgeClass(pct)}">${pct}%</span></td>
+                    <td class="p-2.5 text-center">
+                        <button onclick="deleteDppLog('${d.id}')" class="text-gray-600 hover:text-rose-400 p-1 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </td>
+                `;
+                tbody.insertBefore(tr, tbody.firstChild);
+            });
+
+            buildLineChart('dppTestChart', dppChartInstance, sortedDpps, 'DPP Yield Index', '#10b981', (inst) => dppChartInstance = inst);
+        }
+
+        function addDppLog(e) {
+            e.preventDefault();
+            const subject = document.getElementById('dpp-subject').value;
+            const chapter = document.getElementById('dpp-chapter').value.trim();
+            const dppNum = parseInt(document.getElementById('dpp-number').value) || 1;
+            const score = parseFloat(document.getElementById('dpp-score').value) || 0;
+            const total = parseFloat(document.getElementById('dpp-total').value) || 1;
+            const date = document.getElementById('dpp-date').value;
+
+            state.dppLogs.push({ id: 'dpp_' + Date.now(), subject, chapter, dppNum, score, total, date });
+            saveState();
+            renderDppSection();
+            e.target.reset();
+            document.getElementById('dpp-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        function deleteDppLog(id) {
+            if(confirm("Delete this entry?")) {
+                state.dppLogs = state.dppLogs.filter(d => d.id !== id);
+                saveState();
+                renderDppSection();
+            }
+        }
+
+        function buildLineChart(canvasId, chartInstance, dataset, label, colorHex, callbackAssign) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            const labels = dataset.map(d => d.name ? `${d.name} (${d.date})` : `DPP-${d.dppNum} (${d.date})`);
+            const dataPoints = dataset.map(d => Math.round((d.score / d.total) * 100));
+
+            const newInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['No Data Points'],
+                    datasets: [{
+                        label: label + ' (%)',
+                        data: labels.length > 0 ? dataPoints : [0],
+                        borderColor: colorHex,
+                        backgroundColor: colorHex + '15',
+                        borderWidth: 2,
+                        pointBackgroundColor: colorHex,
+                        pointBorderColor: '#0b0f19',
+                        pointRadius: 4,
+                        tension: 0.25,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9ca3af', font: { size: 9 } } },
+                        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 }, maxRotation: 15, autoSkip: true } }
+                    }
+                }
+            });
+            callbackAssign(newInstance);
+        }
+    </script>
+</body>
+</html>
