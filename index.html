@@ -23,7 +23,6 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        /* FIXED PROGRESS RING TRANSITIONS AND INLINE SCALING */
         .progress-ring__circle {
             transition: stroke-dashoffset 0.35s ease-in-out;
             transform: rotate(-90deg);
@@ -218,7 +217,7 @@
             <section class="space-y-6">
                 <div class="border-b border-gray-800 pb-3">
                     <h2 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">📋 Daily Practice Problem (DPP) Execution Registry</h2>
-                    <p class="text-xs text-gray-400">Granular verification log analyzing execution ratios down to target sheets</p>
+                    <p class="text-xs text-gray-400">Multi-subject metrics view with individual performance traces</p>
                 </div>
 
                 <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
@@ -252,7 +251,7 @@
                     </div>
 
                     <div class="xl:col-span-3 space-y-4">
-                        <div class="glass-card rounded-2xl p-4 h-[240px] relative">
+                        <div class="glass-card rounded-2xl p-4 h-[320px] relative">
                             <canvas id="dppTestChart"></canvas>
                         </div>
                         <div class="glass-card rounded-2xl overflow-hidden border border-gray-800 text-xs">
@@ -280,24 +279,25 @@
     </main>
 
     <script>
+        // FIXED INITIAL STATE: All values set to 0 so the tracker loads fresh at 0%
         const INITIAL_STATE = {
             physics: [
-                { id: "p1", name: "Mathematical Tools", lecsDone: 7, lecsTotal: 7, dppsDone: 3, dppsTotal: 3, pyqs: 25 },
-                { id: "p2", name: "Error in Measurements", lecsDone: 4, lecsTotal: 4, dppsDone: 2, dppsTotal: 2, pyqs: 12 },
-                { id: "p3", name: "Motion in a Straight Line", lecsDone: 5, lecsTotal: 7, dppsDone: 3, dppsTotal: 6, pyqs: 40 },
+                { id: "p1", name: "Mathematical Tools", lecsDone: 0, lecsTotal: 7, dppsDone: 0, dppsTotal: 3, pyqs: 0 },
+                { id: "p2", name: "Error in Measurements", lecsDone: 0, lecsTotal: 4, dppsDone: 0, dppsTotal: 2, pyqs: 0 },
+                { id: "p3", name: "Motion in a Straight Line", lecsDone: 0, lecsTotal: 7, dppsDone: 0, dppsTotal: 6, pyqs: 0 },
                 { id: "p4", name: "Motion in a Plane", lecsDone: 0, lecsTotal: 4, dppsDone: 0, dppsTotal: 2, pyqs: 0 },
                 { id: "p5", name: "Relative Motion", lecsDone: 0, lecsTotal: 4, dppsDone: 0, dppsTotal: 3, pyqs: 0 }
             ],
             pchem: [
-                { id: "pc1", name: "Some Basic Concepts of Chemistry", lecsDone: 13, lecsTotal: 13, dppsDone: 9, dppsTotal: 9, pyqs: 50 },
-                { id: "pc2", name: "Redox Reaction", lecsDone: 6, lecsTotal: 6, dppsDone: 4, dppsTotal: 5, pyqs: 18 },
-                { id: "pc3", name: "Solutions", lecsDone: 2, lecsTotal: 4, dppsDone: 1, dppsTotal: 3, pyqs: 5 }
+                { id: "pc1", name: "Some Basic Concepts of Chemistry", lecsDone: 0, lecsTotal: 13, dppsDone: 0, dppsTotal: 9, pyqs: 0 },
+                { id: "pc2", name: "Redox Reaction", lecsDone: 0, lecsTotal: 6, dppsDone: 0, dppsTotal: 5, pyqs: 0 },
+                { id: "pc3", name: "Solutions", lecsDone: 0, lecsTotal: 4, dppsDone: 0, dppsTotal: 3, pyqs: 0 }
             ],
             ochem: [],
             ichem: [],
             maths: [
-                { id: "m1", name: "Basic Mathematics", lecsDone: 16, lecsTotal: 16, dppsDone: 8, dppsTotal: 8, pyqs: 0 },
-                { id: "m2", name: "Quadratic Equations", lecsDone: 7, lecsTotal: 7, dppsDone: 3, dppsTotal: 3, pyqs: 35 }
+                { id: "m1", name: "Basic Mathematics", lecsDone: 0, lecsTotal: 16, dppsDone: 0, dppsTotal: 8, pyqs: 0 },
+                { id: "m2", name: "Quadratic Equations", lecsDone: 0, lecsTotal: 7, dppsDone: 0, dppsTotal: 3, pyqs: 0 }
             ],
             mainTests: [],
             dppLogs: []
@@ -421,10 +421,9 @@
             document.getElementById('stat-chapters').innerText = `${chaptersDoneCount}`;
             document.getElementById('stat-pyqs').innerText = `${aggregatedPyqs}`;
 
-            // FIXED BIG RING MATH & PROPERTIES
             const macroRing = document.getElementById('subject-progress-ring');
             const radius = 50; 
-            const circumference = radius * 2 * Math.PI; // 314.159
+            const circumference = radius * 2 * Math.PI;
             const offset = circumference - (overallPct / 100) * circumference;
             
             macroRing.style.strokeDasharray = circumference;
@@ -444,11 +443,10 @@
                 const chDppPct = ch.dppsTotal > 0 ? (ch.dppsDone / ch.dppsTotal) * 100 : 0;
                 const chTotalPct = (ch.lecsTotal + ch.dppsTotal) > 0 ? Math.round(((ch.lecsDone + ch.dppsDone) / (ch.lecsTotal + ch.dppsTotal)) * 100) : 0;
 
-                const isDone = (ch.lecsDone >= ch.lecsTotal && ch.dppsDone >= ch.dppsTotal);
+                const isDone = (ch.lecsTotal > 0 && ch.dppsTotal > 0 && ch.lecsDone >= ch.lecsTotal && ch.dppsDone >= ch.dppsTotal);
                 
-                // FIXED SMALL INLINE CELL PROGRESS RING GEOMETRY
                 const subRadius = 18;
-                const subCircumference = subRadius * 2 * Math.PI; // 113.09
+                const subCircumference = subRadius * 2 * Math.PI;
                 const subOffset = subCircumference - (chTotalPct / 100) * subCircumference;
 
                 const tr = document.createElement('tr');
@@ -601,7 +599,39 @@
                 tbody.insertBefore(tr, tbody.firstChild);
             });
 
-            buildLineChart('mainTestChart', mainChartInstance, sortedTests, 'Main Tests Trend', '#3b82f6', (inst) => mainChartInstance = inst);
+            const ctx = document.getElementById('mainTestChart').getContext('2d');
+            if (mainChartInstance) mainChartInstance.destroy();
+
+            const labels = sortedTests.map(t => `${t.name} (${t.date})`);
+            const dataPoints = sortedTests.map(t => Math.round((t.score / t.total) * 100));
+
+            mainChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['No Data Points'],
+                    datasets: [{
+                        label: 'Mock Test (%)',
+                        data: labels.length > 0 ? dataPoints : [0],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#3b82f6',
+                        pointBorderColor: '#0b0f19',
+                        pointRadius: 4,
+                        tension: 0.25,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9ca3af', font: { size: 9 } } },
+                        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 }, maxRotation: 15, autoSkip: true } }
+                    }
+                }
+            });
         }
 
         function addTestLog(e) {
@@ -653,6 +683,7 @@
 
             const tbody = document.getElementById('dpp-tests-tbody');
             tbody.innerHTML = '';
+            
             const sortedDpps = [...dpps].sort((a,b) => new Date(a.date) - new Date(b.date));
 
             sortedDpps.forEach(d => {
@@ -675,7 +706,83 @@
                 tbody.insertBefore(tr, tbody.firstChild);
             });
 
-            buildLineChart('dppTestChart', dppChartInstance, sortedDpps, 'DPP Yield Index', '#10b981', (inst) => dppChartInstance = inst);
+            const ctx = document.getElementById('dppTestChart').getContext('2d');
+            if (dppChartInstance) dppChartInstance.destroy();
+
+            const uniqueDates = [...new Set(sortedDpps.map(d => d.date))].sort((a,b) => new Date(a) - new Date(b));
+
+            const subjectConfigs = {
+                'Physics': { color: '#3b82f6', label: '⚡ Physics' },
+                'Physical Chem': { color: '#a855f7', label: '⚗️ Physical Chem' },
+                'Organic Chem': { color: '#10b981', label: '🌿 Organic Chem' },
+                'Inorganic Chem': { color: '#06b6d4', label: '🔬 Inorganic Chem' },
+                'Maths': { color: '#f59e0b', label: '📐 Maths' }
+            };
+
+            const datasets = Object.keys(subjectConfigs).map(subKey => {
+                const config = subjectConfigs[subKey];
+                
+                const dataPoints = uniqueDates.map(dateStr => {
+                    const matches = sortedDpps.filter(d => d.date === dateStr && d.subject === subKey);
+                    if(matches.length === 0) return null;
+                    
+                    const averageYield = matches.reduce((sum, current) => sum + ((current.score / current.total) * 100), 0) / matches.length;
+                    return Math.round(averageYield);
+                });
+
+                return {
+                    label: config.label,
+                    data: dataPoints,
+                    borderColor: config.color,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: config.color,
+                    pointBorderColor: '#0b0f19',
+                    pointRadius: uniqueDates.map((d, i) => dataPoints[i] !== null ? 4 : 0),
+                    tension: 0.15,
+                    spanGaps: true
+                };
+            });
+
+            dppChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: uniqueDates.length > 0 ? uniqueDates : ['No Logged Entries'],
+                    datasets: uniqueDates.length > 0 ? datasets : []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#9ca3af',
+                                font: { size: 10, weight: '500' },
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            min: 0, 
+                            max: 100, 
+                            grid: { color: 'rgba(255,255,255,0.04)' }, 
+                            ticks: { color: '#9ca3af', font: { size: 9 }, callback: value => value + '%' } 
+                        },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { color: '#9ca3af', font: { size: 9 }, maxRotation: 15, autoSkip: true } 
+                        }
+                    }
+                }
+            });
         }
 
         function addDppLog(e) {
@@ -700,43 +807,6 @@
                 saveState();
                 renderDppSection();
             }
-        }
-
-        function buildLineChart(canvasId, chartInstance, dataset, label, colorHex, callbackAssign) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-
-            const labels = dataset.map(d => d.name ? `${d.name} (${d.date})` : `DPP-${d.dppNum} (${d.date})`);
-            const dataPoints = dataset.map(d => Math.round((d.score / d.total) * 100));
-
-            const newInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels.length > 0 ? labels : ['No Data Points'],
-                    datasets: [{
-                        label: label + ' (%)',
-                        data: labels.length > 0 ? dataPoints : [0],
-                        borderColor: colorHex,
-                        backgroundColor: colorHex + '15',
-                        borderWidth: 2,
-                        pointBackgroundColor: colorHex,
-                        pointBorderColor: '#0b0f19',
-                        pointRadius: 4,
-                        tension: 0.25,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9ca3af', font: { size: 9 } } },
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 }, maxRotation: 15, autoSkip: true } }
-                    }
-                }
-            });
-            callbackAssign(newInstance);
         }
     </script>
 </body>
